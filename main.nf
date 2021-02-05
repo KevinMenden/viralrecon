@@ -134,7 +134,7 @@ if (!(workflow.runName ==~ /[a-z]+_[a-z]+/)) {
 /* --          VALIDATE INPUTS                 -- */
 ////////////////////////////////////////////////////
 
-if (params.input) { ch_input = file(params.input, checkIfExists: true) } else { exit 1, "Input samplesheet file not specified!" }
+if (params.input) { ch_input = file(params.input, checkIfExists: true) } else { exit 1, 'Input samplesheet file not specified!' }
 
 if (params.protocol != 'metagenomic' && params.protocol != 'amplicon') {
     exit 1, "Invalid protocol option: ${params.protocol}. Valid options: 'metagenomic' or 'amplicon'!"
@@ -151,20 +151,20 @@ if (params.protocol == 'amplicon' && !params.skip_variants && !params.amplicon_b
 if (params.amplicon_bed) { ch_amplicon_bed = file(params.amplicon_bed, checkIfExists: true) }
 
 callerList = [ 'varscan2', 'ivar', 'bcftools', 'none']
-callers = params.callers ? params.callers.split(',').collect{ it.trim().toLowerCase() } : []
+callers = params.callers ? params.callers.split(',').collect { it.trim().toLowerCase() } : []
 if ((callerList + callers).unique().size() != callerList.size()) {
     exit 1, "Invalid variant calller option: ${params.callers}. Valid options: ${callerList.join(', ')}"
 }
 
 assemblerList = [ 'spades', 'metaspades', 'unicycler', 'minia', 'none' ]
-assemblers = params.assemblers ? params.assemblers.split(',').collect{ it.trim().toLowerCase() } : []
+assemblers = params.assemblers ? params.assemblers.split(',').collect { it.trim().toLowerCase() } : []
 if ((assemblerList + assemblers).unique().size() != assemblerList.size()) {
     exit 1, "Invalid assembler option: ${params.assemblers}. Valid options: ${assemblerList.join(', ')}"
 }
 
 // Viral reference files
 if (params.genomes && params.genome && !params.genomes.containsKey(params.genome)) {
-   exit 1, "The provided genome '${params.genome}' is not available in the Genome file. Currently the available genomes are ${params.genomes.keySet().join(", ")}"
+    exit 1, "The provided genome '${params.genome}' is not available in the Genome file. Currently the available genomes are ${params.genomes.keySet().join(', ')}"
 }
 params.fasta = params.genome ? params.genomes[ params.genome ].fasta ?: false : false
 params.gff = params.genome ? params.genomes[ params.genome ].gff ?: false : false
@@ -173,15 +173,15 @@ if (params.fasta) {
     file(params.fasta, checkIfExists: true)
 
     lastPath = params.fasta.lastIndexOf(File.separator)
-    lastExt = params.fasta.lastIndexOf(".")
-    fasta_base = params.fasta.substring(lastPath+1)
-    index_base = params.fasta.substring(lastPath+1,lastExt)
+    lastExt = params.fasta.lastIndexOf('.')
+    fasta_base = params.fasta.substring(lastPath + 1)
+    index_base = params.fasta.substring(lastPath + 1, lastExt)
     if (params.fasta.endsWith('.gz')) {
-        fasta_base = params.fasta.substring(lastPath+1,lastExt)
-        index_base = fasta_base.substring(0,fasta_base.lastIndexOf("."))
+        fasta_base = params.fasta.substring(lastPath + 1, lastExt)
+        index_base = fasta_base.substring(0, fasta_base.lastIndexOf('.'))
     }
 } else {
-    exit 1, "Viral genome fasta file not specified!"
+    exit 1, 'Viral genome fasta file not specified!'
 }
 
 ////////////////////////////////////////////////////
@@ -208,12 +208,12 @@ ch_ivar_variants_header_mqc = file("$projectDir/assets/headers/ivar_variants_hea
 // Check AWS batch settings
 if (workflow.profile.contains('awsbatch')) {
     // AWSBatch sanity checking
-    if (!params.awsqueue || !params.awsregion) exit 1, "Specify correct --awsqueue and --awsregion parameters on AWSBatch!"
+    if (!params.awsqueue || !params.awsregion) exit 1, 'Specify correct --awsqueue and --awsregion parameters on AWSBatch!'
     // Check outdir paths to be S3 buckets if running on AWSBatch
     // related: https://github.com/nextflow-io/nextflow/issues/813
-    if (!params.outdir.startsWith('s3:')) exit 1, "Outdir not on S3 - specify S3 Bucket to run on AWSBatch!"
+    if (!params.outdir.startsWith('s3:')) exit 1, 'Outdir not on S3 - specify S3 Bucket to run on AWSBatch!'
     // Prevent trace files to be stored on S3 since S3 does not support rolling files.
-    if (params.tracedir.startsWith('s3:')) exit 1, "Specify a local tracedir or run without trace! S3 cannot be used for tracefiles."
+    if (params.tracedir.startsWith('s3:')) exit 1, 'Specify a local tracedir or run without trace! S3 cannot be used for tracefiles.'
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -319,7 +319,7 @@ if (params.email || params.email_on_fail) {
     summary['E-mail on failure']     = params.email_on_fail
     summary['MultiQC maxsize']       = params.max_multiqc_email_size
 }
-log.info summary.collect { k,v -> "${k.padRight(22)}: $v" }.join("\n")
+log.info summary.collect { k, v -> "${k.padRight(22)}: $v" }.join('\n')
 log.info "-\033[2m--------------------------------------------------\033[0m-"
 
 // Check the hostnames against configured profiles
@@ -351,9 +351,9 @@ if (params.fasta.endsWith('.gz')) {
 
         script:
         unzip = fasta.toString() - '.gz'
-        """
+        '''
         pigz -f -d -p $task.cpus $fasta
-        """
+        '''
     }
 } else {
     ch_fasta = file(params.fasta)
@@ -393,9 +393,9 @@ if (params.gff) {
 
             script:
             unzip = gff.toString() - '.gz'
-            """
+            '''
             pigz -f -d -p $task.cpus $gff
-            """
+            '''
         }
     } else {
         ch_gff = file(params.gff)
@@ -448,16 +448,16 @@ process CHECK_SAMPLESHEET {
     tag "$samplesheet"
     publishDir "${params.outdir}/", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.endsWith(".tsv")) "preprocess/sra/$filename"
+                      if (filename.endsWith('.tsv')) "preprocess/sra/$filename"
                       else "pipeline_info/$filename"
-                }
+        }
 
     input:
     path samplesheet from ch_input
 
     output:
-    path "samplesheet.valid.csv" into ch_samplesheet_reformat
-    path "sra_run_info.tsv" optional true
+    path 'samplesheet.valid.csv' into ch_samplesheet_reformat
+    path 'sra_run_info.tsv' optional true
 
     script:  // These scripts are bundled with the pipeline, in nf-core/viralrecon/bin/
     run_sra = !params.skip_sra && !isOffline()
@@ -539,9 +539,9 @@ if (!params.skip_sra || !isOffline()) {
         label 'error_retry'
         publishDir "${params.outdir}/preprocess/sra", mode: params.publish_dir_mode,
             saveAs: { filename ->
-                          if (filename.endsWith(".md5")) "md5/$filename"
+                          if (filename.endsWith('.md5')) "md5/$filename"
                           else params.save_sra_fastq ? filename : null
-                    }
+            }
 
         when:
         is_ftp
@@ -550,8 +550,8 @@ if (!params.skip_sra || !isOffline()) {
         tuple val(sample), val(single_end), val(is_sra), val(is_ftp), val(fastq), val(md5) from ch_reads_sra_ftp
 
         output:
-        tuple val(sample), val(single_end), val(is_sra), val(is_ftp), path("*.fastq.gz") into ch_sra_fastq_ftp
-        path "*.md5"
+        tuple val(sample), val(single_end), val(is_sra), val(is_ftp), path('*.fastq.gz') into ch_sra_fastq_ftp
+        path '*.md5'
 
         script:
         if (single_end) {
@@ -579,9 +579,9 @@ if (!params.skip_sra || !isOffline()) {
         label 'error_retry'
         publishDir "${params.outdir}/preprocess/sra", mode: params.publish_dir_mode,
             saveAs: { filename ->
-                          if (filename.endsWith(".log")) "log/$filename"
+                          if (filename.endsWith('.log')) "log/$filename"
                           else params.save_sra_fastq ? filename : null
-                    }
+            }
 
         when:
         !is_ftp
@@ -590,13 +590,13 @@ if (!params.skip_sra || !isOffline()) {
         tuple val(sample), val(single_end), val(is_sra), val(is_ftp) from ch_reads_sra_dump.map { it[0..3] }
 
         output:
-        tuple val(sample), val(single_end), val(is_sra), val(is_ftp), path("*.fastq.gz") into ch_sra_fastq_dump
-        path "*.log"
+        tuple val(sample), val(single_end), val(is_sra), val(is_ftp), path('*.fastq.gz') into ch_sra_fastq_dump
+        path '*.log'
 
         script:
         prefix = "${sample.split('_')[0..-2].join('_')}"
-        pe = single_end ? "" : "--readids --split-e"
-        rm_orphan = single_end ? "" : "[ -f  ${prefix}.fastq.gz ] && rm ${prefix}.fastq.gz"
+        pe = single_end ? '' : '--readids --split-e'
+        rm_orphan = single_end ? '' : "[ -f  ${prefix}.fastq.gz ] && rm ${prefix}.fastq.gz"
         """
         parallel-fastq-dump \\
             --sra-id $prefix \\
@@ -641,16 +641,16 @@ process CAT_FASTQ {
     tuple val(sample), val(single_end), path(reads) from ch_reads_all
 
     output:
-    tuple val(sample), val(single_end), path("*.merged.fastq.gz") into ch_cat_fastqc,
+    tuple val(sample), val(single_end), path('*.merged.fastq.gz') into ch_cat_fastqc,
                                                                        ch_cat_fastp
 
     script:
-    readList = reads.collect{it.toString()}
+    readList = reads.collect { it.toString() }
     if (!single_end) {
         if (readList.size > 2) {
             def read1 = []
             def read2 = []
-            readList.eachWithIndex{ v, ix -> ( ix & 1 ? read2 : read1 ) << v }
+            readList.eachWithIndex { v, ix -> ( ix & 1 ? read2 : read1 ) << v }
             """
             cat ${read1.sort().join(' ')} > ${sample}_1.merged.fastq.gz
             cat ${read2.sort().join(' ')} > ${sample}_2.merged.fastq.gz
@@ -690,8 +690,8 @@ process FASTQC {
     label 'process_medium'
     publishDir "${params.outdir}/preprocess/fastqc", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      filename.endsWith(".zip") ? "zips/$filename" : filename
-                }
+                      filename.endsWith('.zip') ? "zips/$filename" : filename
+        }
 
     when:
     !params.skip_fastqc
@@ -700,7 +700,7 @@ process FASTQC {
     tuple val(sample), val(single_end), path(reads) from ch_cat_fastqc
 
     output:
-    path "*.{zip,html}" into ch_fastqc_raw_reports_mqc
+    path '*.{zip,html}' into ch_fastqc_raw_reports_mqc
 
     script:
     """
@@ -725,13 +725,13 @@ if (!params.skip_adapter_trimming) {
         label 'process_medium'
         publishDir "${params.outdir}/preprocess/fastp", mode: params.publish_dir_mode,
             saveAs: { filename ->
-                          if (filename.endsWith(".json")) filename
-                          else if (filename.endsWith(".fastp.html")) filename
-                          else if (filename.endsWith("_fastqc.html")) "fastqc/$filename"
-                          else if (filename.endsWith(".zip")) "fastqc/zips/$filename"
-                          else if (filename.endsWith(".log")) "log/$filename"
+                          if (filename.endsWith('.json')) filename
+                          else if (filename.endsWith('.fastp.html')) filename
+                          else if (filename.endsWith('_fastqc.html')) "fastqc/$filename"
+                          else if (filename.endsWith('.zip')) "fastqc/zips/$filename"
+                          else if (filename.endsWith('.log')) "log/$filename"
                           else params.save_trimmed ? filename : null
-                    }
+            }
 
         when:
         !params.skip_variants || !params.skip_assembly
@@ -740,17 +740,17 @@ if (!params.skip_adapter_trimming) {
         tuple val(sample), val(single_end), path(reads) from ch_cat_fastp
 
         output:
-        tuple val(sample), val(single_end), path("*.trim.fastq.gz") into ch_fastp_bowtie2,
+        tuple val(sample), val(single_end), path('*.trim.fastq.gz') into ch_fastp_bowtie2,
                                                                          ch_fastp_cutadapt,
                                                                          ch_fastp_kraken2
-        path "*.json" into ch_fastp_mqc
-        path "*_fastqc.{zip,html}" into ch_fastp_fastqc_mqc
-        path "*.{log,fastp.html}"
-        path "*.fail.fastq.gz"
+        path '*.json' into ch_fastp_mqc
+        path '*_fastqc.{zip,html}' into ch_fastp_fastqc_mqc
+        path '*.{log,fastp.html}'
+        path '*.fail.fastq.gz'
 
         script:
         // Added soft-links to original fastqs for consistent naming in MultiQC
-        autodetect = single_end ? "" : "--detect_adapter_for_pe"
+        autodetect = single_end ? '' : '--detect_adapter_for_pe'
         """
         IN_READS='--in1 ${sample}.fastq.gz'
         OUT_READS='--out1 ${sample}.trim.fastq.gz --failed_out ${sample}.fail.fastq.gz'
@@ -816,7 +816,7 @@ process BOWTIE2_INDEX {
     path fasta from ch_fasta
 
     output:
-    path "Bowtie2Index" into ch_index
+    path 'Bowtie2Index' into ch_index
 
     script:
     """
@@ -847,7 +847,7 @@ process MAKE_SNPEFF_DB {
     path ("SnpEffDB/${index_base}/genes.gff") from ch_gff
 
     output:
-    tuple path("SnpEffDB"), path("*.config") into ch_snpeff_db_varscan2,
+    tuple path('SnpEffDB'), path('*.config') into ch_snpeff_db_varscan2,
                                                   ch_snpeff_db_ivar,
                                                   ch_snpeff_db_bcftools,
                                                   ch_snpeff_db_spades,
@@ -870,9 +870,9 @@ process BOWTIE2 {
     label 'process_medium'
     publishDir "${params.outdir}/variants/bam", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.endsWith(".log")) "log/$filename"
+                      if (filename.endsWith('.log')) "log/$filename"
                       else params.save_align_intermeds ? filename : null
-                }
+        }
 
     when:
     !params.skip_variants
@@ -882,12 +882,12 @@ process BOWTIE2 {
     path index from ch_index
 
     output:
-    tuple val(sample), val(single_end), path("*.bam") into ch_bowtie2_bam
-    path "*.log" into ch_bowtie2_mqc
+    tuple val(sample), val(single_end), path('*.bam') into ch_bowtie2_bam
+    path '*.log' into ch_bowtie2_mqc
 
     script:
     input_reads = single_end ? "-U $reads" : "-1 ${reads[0]} -2 ${reads[1]}"
-    filter = params.filter_unmapped ? "-F4" : ""
+    filter = params.filter_unmapped ? '-F4' : ''
     """
     bowtie2 \\
         --threads $task.cpus \\
@@ -908,11 +908,11 @@ process SORT_BAM {
     label 'process_medium'
     publishDir "${params.outdir}/variants/bam", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.endsWith(".flagstat")) "samtools_stats/$filename"
-                      else if (filename.endsWith(".idxstats")) "samtools_stats/$filename"
-                      else if (filename.endsWith(".stats")) "samtools_stats/$filename"
+                      if (filename.endsWith('.flagstat')) "samtools_stats/$filename"
+                      else if (filename.endsWith('.idxstats')) "samtools_stats/$filename"
+                      else if (filename.endsWith('.stats')) "samtools_stats/$filename"
                       else (params.protocol != 'amplicon' && params.skip_markduplicates) || params.save_align_intermeds ? filename : null
-                }
+        }
 
     when:
     !params.skip_variants
@@ -921,8 +921,8 @@ process SORT_BAM {
     tuple val(sample), val(single_end), path(bam) from ch_bowtie2_bam
 
     output:
-    tuple val(sample), val(single_end), path("*.sorted.{bam,bam.bai}"), path("*.flagstat") into ch_sort_bam
-    path "*.{flagstat,idxstats,stats}" into ch_sort_bam_flagstat_mqc
+    tuple val(sample), val(single_end), path('*.sorted.{bam,bam.bai}'), path('*.flagstat') into ch_sort_bam
+    path '*.{flagstat,idxstats,stats}' into ch_sort_bam_flagstat_mqc
 
     script:
     """
@@ -949,9 +949,9 @@ def get_mapped_from_flagstat(flagstat) {
 // and returns true if > params.min_mapped_reads and otherwise false
 pass_mapped_reads = [:]
 fail_mapped_reads = [:]
-def check_mapped(sample,flagstat,min_mapped_reads=500) {
+def check_mapped(sample, flagstat, min_mapped_reads=500) {
     mapped = get_mapped_from_flagstat(flagstat)
-    c_reset = params.monochrome_logs ? '' : "\033[0m";
+    c_reset = params.monochrome_logs ? '' : "\033[0m"
     c_green = params.monochrome_logs ? '' : "\033[0;32m";
     c_red = params.monochrome_logs ? '' : "\033[0;31m";
     if (mapped < min_mapped_reads.toInteger()) {
@@ -967,7 +967,7 @@ def check_mapped(sample,flagstat,min_mapped_reads=500) {
 
 // Remove samples that failed mapped read threshold
 ch_sort_bam
-    .filter { sample, single_end, bam, flagstat -> check_mapped(sample,flagstat,params.min_mapped_reads) }
+    .filter { sample, single_end, bam, flagstat -> check_mapped(sample, flagstat, params.min_mapped_reads) }
     .map { it[0..2] }
     .set { ch_sort_bam }
 
@@ -985,12 +985,12 @@ if (params.protocol != 'amplicon') {
         label 'process_medium'
         publishDir "${params.outdir}/variants/bam", mode: params.publish_dir_mode,
             saveAs: { filename ->
-                          if (filename.endsWith(".flagstat")) "samtools_stats/$filename"
-                          else if (filename.endsWith(".idxstats")) "samtools_stats/$filename"
-                          else if (filename.endsWith(".stats")) "samtools_stats/$filename"
-                          else if (filename.endsWith(".log")) "log/$filename"
+                          if (filename.endsWith('.flagstat')) "samtools_stats/$filename"
+                          else if (filename.endsWith('.idxstats')) "samtools_stats/$filename"
+                          else if (filename.endsWith('.stats')) "samtools_stats/$filename"
+                          else if (filename.endsWith('.log')) "log/$filename"
                           else params.skip_markduplicates || params.save_align_intermeds ? filename : null
-                    }
+            }
 
         when:
         !params.skip_variants
@@ -1000,14 +1000,14 @@ if (params.protocol != 'amplicon') {
         path bed from ch_amplicon_bed
 
         output:
-        tuple val(sample), val(single_end), path("*.sorted.{bam,bam.bai}") into ch_ivar_trim_bam
-        path "*.{flagstat,idxstats,stats}" into ch_ivar_trim_flagstat_mqc
-        path "*.log" into ch_ivar_trim_log_mqc
+        tuple val(sample), val(single_end), path('*.sorted.{bam,bam.bai}') into ch_ivar_trim_bam
+        path '*.{flagstat,idxstats,stats}' into ch_ivar_trim_flagstat_mqc
+        path '*.log' into ch_ivar_trim_log_mqc
 
         script:
-        exclude_reads = params.ivar_trim_noprimer ? "" : "-e"
+        exclude_reads = params.ivar_trim_noprimer ? '' : '-e'
         prefix = "${sample}.trim"
-        """
+        '''
         samtools view -b -F 4 ${bam[0]} > ${sample}.mapped.bam
         samtools index ${sample}.mapped.bam
 
@@ -1025,7 +1025,7 @@ if (params.protocol != 'amplicon') {
         samtools flagstat ${prefix}.sorted.bam > ${prefix}.sorted.bam.flagstat
         samtools idxstats ${prefix}.sorted.bam > ${prefix}.sorted.bam.idxstats
         samtools stats ${prefix}.sorted.bam > ${prefix}.sorted.bam.stats
-        """
+        '''
     }
 }
 
@@ -1049,12 +1049,12 @@ if (params.skip_markduplicates) {
         label 'process_medium'
         publishDir "${params.outdir}/variants/bam", mode: params.publish_dir_mode,
             saveAs: { filename ->
-                          if (filename.endsWith(".flagstat")) "samtools_stats/$filename"
-                          else if (filename.endsWith(".idxstats")) "samtools_stats/$filename"
-                          else if (filename.endsWith(".stats")) "samtools_stats/$filename"
-                          else if (filename.endsWith(".metrics.txt")) "picard_metrics/$filename"
+                          if (filename.endsWith('.flagstat')) "samtools_stats/$filename"
+                          else if (filename.endsWith('.idxstats')) "samtools_stats/$filename"
+                          else if (filename.endsWith('.stats')) "samtools_stats/$filename"
+                          else if (filename.endsWith('.metrics.txt')) "picard_metrics/$filename"
                           else filename
-                    }
+            }
 
         when:
         !params.skip_variants
@@ -1064,26 +1064,26 @@ if (params.skip_markduplicates) {
         path fasta from ch_fasta
 
         output:
-        tuple val(sample), val(single_end), path("*.sorted.{bam,bam.bai}") into ch_markdup_bam_metrics,
+        tuple val(sample), val(single_end), path('*.sorted.{bam,bam.bai}') into ch_markdup_bam_metrics,
                                                                                 ch_markdup_bam_mosdepth_genome,
                                                                                 ch_markdup_bam_mosdepth_amplicon,
                                                                                 ch_markdup_bam_mpileup,
                                                                                 ch_markdup_bam_varscan2_consensus,
                                                                                 ch_markdup_bam_bcftools,
                                                                                 ch_markdup_bam_bcftools_consensus
-        path "*.{flagstat,idxstats,stats}" into ch_markdup_bam_flagstat_mqc
-        path "*.txt" into ch_markdup_bam_metrics_mqc
+        path '*.{flagstat,idxstats,stats}' into ch_markdup_bam_flagstat_mqc
+        path '*.txt' into ch_markdup_bam_metrics_mqc
 
         script:
         def avail_mem = 3
         if (!task.memory) {
-            log.info "[Picard MarkDuplicates] Available memory not known - defaulting to 3GB. Specify process memory requirements to change this."
+            log.info '[Picard MarkDuplicates] Available memory not known - defaulting to 3GB. Specify process memory requirements to change this.'
         } else {
             avail_mem = task.memory.toGiga()
         }
         prefix = params.protocol == 'amplicon' ? "${sample}.trim.mkD" : "${sample}.mkD"
-        keep_dup = params.filter_dups ? "true" : "false"
-        """
+        keep_dup = params.filter_dups ? 'true' : 'false'
+        '''
         picard -Xmx${avail_mem}g MarkDuplicates \\
             INPUT=${bam[0]} \\
             OUTPUT=${prefix}.sorted.bam \\
@@ -1096,7 +1096,7 @@ if (params.skip_markduplicates) {
         samtools idxstats ${prefix}.sorted.bam > ${prefix}.sorted.bam.idxstats
         samtools flagstat ${prefix}.sorted.bam > ${prefix}.sorted.bam.flagstat
         samtools stats ${prefix}.sorted.bam > ${prefix}.sorted.bam.stats
-        """
+        '''
     }
 }
 
@@ -1116,17 +1116,17 @@ process PICARD_METRICS {
     path fasta from ch_fasta
 
     output:
-    path "*metrics" into ch_picard_metrics_mqc
-    path "*.pdf"
+    path '*metrics' into ch_picard_metrics_mqc
+    path '*.pdf'
 
     script:
     def avail_mem = 3
     if (!task.memory) {
-        log.info "[Picard CollectMultipleMetrics] Available memory not known - defaulting to 3GB. Specify process memory requirements to change this."
+        log.info '[Picard CollectMultipleMetrics] Available memory not known - defaulting to 3GB. Specify process memory requirements to change this.'
     } else {
         avail_mem = task.memory.toGiga()
     }
-    suffix = params.skip_markduplicates ? "" : ".mkD"
+    suffix = params.skip_markduplicates ? '' : '.mkD'
     prefix = params.protocol == 'amplicon' ? "${sample}.trim${suffix}" : "${sample}${suffix}"
     """
     picard -Xmx${avail_mem}g CollectMultipleMetrics \\
@@ -1154,10 +1154,10 @@ process MOSDEPTH_GENOME {
     label 'process_medium'
     publishDir "${params.outdir}/variants/bam/mosdepth/genome", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.endsWith(".pdf")) "plots/$filename"
-                      else if (filename.endsWith(".tsv")) "plots/$filename"
+                      if (filename.endsWith('.pdf')) "plots/$filename"
+                      else if (filename.endsWith('.tsv')) "plots/$filename"
                       else filename
-                }
+        }
 
     when:
     !params.skip_variants && !params.skip_mosdepth
@@ -1166,11 +1166,11 @@ process MOSDEPTH_GENOME {
     tuple val(sample), val(single_end), path(bam) from ch_markdup_bam_mosdepth_genome
 
     output:
-    path "*.global.dist.txt" into ch_mosdepth_genome_mqc
-    path "*.{txt,gz,csi,tsv,pdf}"
+    path '*.global.dist.txt' into ch_mosdepth_genome_mqc
+    path '*.{txt,gz,csi,tsv,pdf}'
 
     script:
-    suffix = params.skip_markduplicates ? "" : ".mkD"
+    suffix = params.skip_markduplicates ? '' : '.mkD'
     prefix = params.protocol == 'amplicon' ? "${sample}.trim${suffix}.genome" : "${sample}${suffix}.genome"
     plot_suffix = params.protocol == 'amplicon' ? ".trim${suffix}.genome" : "${suffix}.genome"
     """
@@ -1205,11 +1205,11 @@ if (params.protocol == 'amplicon') {
         path bed from ch_amplicon_bed
 
         output:
-        path "*.regions.bed.gz" into ch_mosdepth_amplicon_region_bed
-        path "*.{txt,gz,csi}"
+        path '*.regions.bed.gz' into ch_mosdepth_amplicon_region_bed
+        path '*.{txt,gz,csi}'
 
         script:
-        suffix = params.skip_markduplicates ? "" : ".mkD"
+        suffix = params.skip_markduplicates ? '' : '.mkD'
         prefix = "${sample}.trim${suffix}.amplicon"
         """
         collapse_amplicon_bed.py \\
@@ -1239,10 +1239,10 @@ if (params.protocol == 'amplicon') {
         path bed from ch_mosdepth_amplicon_region_bed.collect()
 
         output:
-        path "*.{tsv,pdf}"
+        path '*.{tsv,pdf}'
 
         script:
-        suffix = params.skip_markduplicates ? "" : ".mkD"
+        suffix = params.skip_markduplicates ? '' : '.mkD'
         suffix = ".trim${suffix}.amplicon"
         """
         plot_mosdepth_regions.r \\
@@ -1276,13 +1276,13 @@ process SAMTOOLS_MPILEUP {
     path fasta from ch_fasta
 
     output:
-    tuple val(sample), val(single_end), path("*.mpileup") into ch_mpileup_varscan2,
+    tuple val(sample), val(single_end), path('*.mpileup') into ch_mpileup_varscan2,
                                                                ch_mpileup_ivar_variants,
                                                                ch_mpileup_ivar_consensus,
                                                                ch_mpileup_ivar_bcftools
 
     script:
-    suffix = params.skip_markduplicates ? "" : ".mkD"
+    suffix = params.skip_markduplicates ? '' : '.mkD'
     prefix = params.protocol == 'amplicon' ? "${sample}.trim${suffix}" : "${sample}${suffix}"
     """
     samtools mpileup \\
@@ -1305,10 +1305,10 @@ process VARSCAN2 {
     label 'process_medium'
     publishDir "${params.outdir}/variants/varscan2", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.endsWith(".log")) "log/$filename"
-                      else if (filename.endsWith(".txt")) "bcftools_stats/$filename"
+                      if (filename.endsWith('.log')) "log/$filename"
+                      else if (filename.endsWith('.txt')) "bcftools_stats/$filename"
                       else filename
-                }
+        }
 
     when:
     !params.skip_variants && 'varscan2' in callers
@@ -1323,12 +1323,12 @@ process VARSCAN2 {
                                                                        ch_varscan2_highfreq_intersect
     tuple val(sample), val(single_end), path("${sample}.vcf.gz*") into ch_varscan2_lowfreq_snpeff
     path "${prefix}.bcftools_stats.txt" into ch_varscan2_bcftools_highfreq_mqc
-    path "*.varscan2.log" into ch_varscan2_log_mqc
+    path '*.varscan2.log' into ch_varscan2_log_mqc
     path "${sample}.bcftools_stats.txt"
 
     script:
     prefix = "${sample}.AF${params.max_allele_freq}"
-    strand = params.protocol != 'amplicon' && params.varscan2_strand_filter ? "--strand-filter 1" : "--strand-filter 0"
+    strand = params.protocol != 'amplicon' && params.varscan2_strand_filter ? '--strand-filter 1' : '--strand-filter 0'
     """
     echo "$sample" > sample_name.list
     varscan mpileup2cns \\
@@ -1366,21 +1366,21 @@ process VARSCAN2_CONSENSUS {
     label 'process_medium'
     publishDir "${params.outdir}/variants/varscan2/consensus", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.endsWith(".tsv")) "base_qc/$filename"
-                      else if (filename.endsWith(".pdf")) "base_qc/$filename"
+                      if (filename.endsWith('.tsv')) "base_qc/$filename"
+                      else if (filename.endsWith('.pdf')) "base_qc/$filename"
                       else filename
-                }
+        }
 
     when:
     !params.skip_variants && 'varscan2' in callers
 
     input:
-    tuple val(sample), val(single_end), path(bam), path(vcf) from ch_markdup_bam_varscan2_consensus.join(ch_varscan2_highfreq_consensus, by: [0,1])
+    tuple val(sample), val(single_end), path(bam), path(vcf) from ch_markdup_bam_varscan2_consensus.join(ch_varscan2_highfreq_consensus, by: [0, 1])
     path fasta from ch_fasta
 
     output:
-    tuple val(sample), val(single_end), path("*consensus.masked.fa") into ch_varscan2_consensus
-    path "*.{consensus.fa,tsv,pdf}"
+    tuple val(sample), val(single_end), path('*consensus.masked.fa') into ch_varscan2_consensus
+    path '*.{consensus.fa,tsv,pdf}'
 
     script:
     prefix = "${sample}.AF${params.max_allele_freq}"
@@ -1419,14 +1419,14 @@ process VARSCAN2_SNPEFF {
     !params.skip_variants && 'varscan2' in callers && params.gff && !params.skip_snpeff
 
     input:
-    tuple val(sample), val(single_end), path(highfreq_vcf), path(lowfreq_vcf) from ch_varscan2_highfreq_snpeff.join(ch_varscan2_lowfreq_snpeff, by: [0,1])
+    tuple val(sample), val(single_end), path(highfreq_vcf), path(lowfreq_vcf) from ch_varscan2_highfreq_snpeff.join(ch_varscan2_lowfreq_snpeff, by: [0, 1])
     tuple file(db), file(config) from ch_snpeff_db_varscan2
 
     output:
     path "${prefix}.snpEff.csv" into ch_varscan2_snpeff_highfreq_mqc
     path "${sample}.snpEff.csv"
-    path "*.vcf.gz*"
-    path "*.{txt,html}"
+    path '*.vcf.gz*'
+    path '*.{txt,html}'
 
     script:
     prefix = "${sample}.AF${params.max_allele_freq}"
@@ -1476,7 +1476,7 @@ process VARSCAN2_SNPEFF {
         "ANN[*].AA_LEN" "ANN[*].DISTANCE" "EFF[*].EFFECT" \\
         "EFF[*].FUNCLASS" "EFF[*].CODON" "EFF[*].AA" "EFF[*].AA_LEN" \\
         > ${prefix}.snpSift.table.txt
-    	"""
+        """
 }
 
 /*
@@ -1486,23 +1486,23 @@ process VARSCAN2_QUAST {
     label 'process_medium'
     publishDir "${params.outdir}/variants/varscan2/quast", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (!filename.endsWith(".tsv")) filename
-                }
+                      if (!filename.endsWith('.tsv')) filename
+        }
 
     when:
     !params.skip_variants && 'varscan2' in callers && !params.skip_variants_quast
 
     input:
-    path consensus from ch_varscan2_consensus.collect{ it[2] }
+    path consensus from ch_varscan2_consensus.collect { it[2] }
     path fasta from ch_fasta
     path gff from ch_gff
 
     output:
     path "AF${params.max_allele_freq}"
-    path "report.tsv" into ch_varscan2_quast_mqc
+    path 'report.tsv' into ch_varscan2_quast_mqc
 
     script:
-    features = params.gff ? "--features $gff" : ""
+    features = params.gff ? "--features $gff" : ''
     """
     quast.py \\
         --output-dir AF${params.max_allele_freq} \\
@@ -1526,11 +1526,11 @@ process IVAR_VARIANTS {
     label 'process_medium'
     publishDir "${params.outdir}/variants/ivar", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.endsWith(".bcftools_stats.txt")) "bcftools_stats/$filename"
-                      else if (filename.endsWith(".log")) "log/$filename"
-                      else if (filename.endsWith("_mqc.tsv")) null
+                      if (filename.endsWith('.bcftools_stats.txt')) "bcftools_stats/$filename"
+                      else if (filename.endsWith('.log')) "log/$filename"
+                      else if (filename.endsWith('_mqc.tsv')) null
                       else filename
-                }
+        }
 
     when:
     !params.skip_variants && 'ivar' in callers
@@ -1549,10 +1549,10 @@ process IVAR_VARIANTS {
     path "${sample}.variant.counts_mqc.tsv" into ch_ivar_count_mqc
     path "${sample}.bcftools_stats.txt"
     path "${sample}.tsv"
-    path "*.log"
+    path '*.log'
 
     script:
-    features = params.gff ? "-g $gff" : ""
+    features = params.gff ? "-g $gff" : ''
     prefix = "${sample}.AF${params.max_allele_freq}"
     """
     cat $mpileup | ivar variants -q $params.min_base_qual -t $params.min_allele_freq -m $params.min_coverage -r $fasta $features -p $sample
@@ -1578,10 +1578,10 @@ process IVAR_CONSENSUS {
     label 'process_medium'
     publishDir "${params.outdir}/variants/ivar/consensus", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.endsWith(".tsv")) "base_qc/$filename"
-                      else if (filename.endsWith(".pdf")) "base_qc/$filename"
+                      if (filename.endsWith('.tsv')) "base_qc/$filename"
+                      else if (filename.endsWith('.pdf')) "base_qc/$filename"
                       else filename
-                }
+        }
 
     when:
     !params.skip_variants && 'ivar' in callers
@@ -1591,8 +1591,8 @@ process IVAR_CONSENSUS {
     path fasta from ch_fasta
 
     output:
-    tuple val(sample), val(single_end), path("*.fa") into ch_ivar_consensus
-    path "*.{txt,tsv,pdf}"
+    tuple val(sample), val(single_end), path('*.fa') into ch_ivar_consensus
+    path '*.{txt,tsv,pdf}'
 
     script:
     prefix = "${sample}.AF${params.max_allele_freq}"
@@ -1617,14 +1617,14 @@ process IVAR_SNPEFF {
     !params.skip_variants && 'ivar' in callers && params.gff && !params.skip_snpeff
 
     input:
-    tuple val(sample), val(single_end), path(highfreq_vcf), path(lowfreq_vcf) from ch_ivar_highfreq_snpeff.join(ch_ivar_lowfreq_snpeff, by: [0,1])
+    tuple val(sample), val(single_end), path(highfreq_vcf), path(lowfreq_vcf) from ch_ivar_highfreq_snpeff.join(ch_ivar_lowfreq_snpeff, by: [0, 1])
     tuple file(db), file(config) from ch_snpeff_db_ivar
 
     output:
     path "${prefix}.snpEff.csv" into ch_ivar_snpeff_highfreq_mqc
     path "${sample}.snpEff.csv"
-    path "*.vcf.gz*"
-    path "*.{txt,html}"
+    path '*.vcf.gz*'
+    path '*.{txt,html}'
 
     script:
     prefix = "${sample}.AF${params.max_allele_freq}"
@@ -1674,7 +1674,7 @@ process IVAR_SNPEFF {
         "ANN[*].AA_LEN" "ANN[*].DISTANCE" "EFF[*].EFFECT" \\
         "EFF[*].FUNCLASS" "EFF[*].CODON" "EFF[*].AA" "EFF[*].AA_LEN" \\
         > ${prefix}.snpSift.table.txt
-   	"""
+       """
 }
 
 /*
@@ -1684,23 +1684,23 @@ process IVAR_QUAST {
     label 'process_medium'
     publishDir "${params.outdir}/variants/ivar/quast", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (!filename.endsWith(".tsv")) filename
-                }
+                      if (!filename.endsWith('.tsv')) filename
+        }
 
     when:
     !params.skip_variants && 'ivar' in callers && !params.skip_variants_quast
 
     input:
-    path consensus from ch_ivar_consensus.collect{ it[2] }
+    path consensus from ch_ivar_consensus.collect { it[2] }
     path fasta from ch_fasta
     path gff from ch_gff
 
     output:
     path "AF${params.max_allele_freq}"
-    path "report.tsv" into ch_ivar_quast_mqc
+    path 'report.tsv' into ch_ivar_quast_mqc
 
     script:
-    features = params.gff ? "--features $gff" : ""
+    features = params.gff ? "--features $gff" : ''
     """
     quast.py \\
         --output-dir AF${params.max_allele_freq} \\
@@ -1724,9 +1724,9 @@ process BCFTOOLS_VARIANTS {
     label 'process_medium'
     publishDir "${params.outdir}/variants/bcftools", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.endsWith(".txt")) "bcftools_stats/$filename"
+                      if (filename.endsWith('.txt')) "bcftools_stats/$filename"
                       else filename
-                }
+        }
 
     when:
     !params.skip_variants && 'bcftools' in callers
@@ -1736,10 +1736,10 @@ process BCFTOOLS_VARIANTS {
     path fasta from ch_fasta
 
     output:
-    tuple val(sample), val(single_end), path("*.vcf.gz*") into ch_bcftools_variants_consensus,
+    tuple val(sample), val(single_end), path('*.vcf.gz*') into ch_bcftools_variants_consensus,
                                                                ch_bcftools_variants_snpeff,
                                                                ch_bcftools_variants_intersect
-    path "*.bcftools_stats.txt" into ch_bcftools_variants_mqc
+    path '*.bcftools_stats.txt' into ch_bcftools_variants_mqc
 
     script:
     """
@@ -1768,21 +1768,21 @@ process BCFTOOLS_CONSENSUS {
     label 'process_medium'
     publishDir "${params.outdir}/variants/bcftools/consensus", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.endsWith(".tsv")) "base_qc/$filename"
-                      else if (filename.endsWith(".pdf")) "base_qc/$filename"
+                      if (filename.endsWith('.tsv')) "base_qc/$filename"
+                      else if (filename.endsWith('.pdf')) "base_qc/$filename"
                       else filename
-                }
+        }
 
     when:
     !params.skip_variants && 'bcftools' in callers
 
     input:
-    tuple val(sample), val(single_end), path(bam), path(vcf) from ch_markdup_bam_bcftools_consensus.join(ch_bcftools_variants_consensus, by: [0,1])
+    tuple val(sample), val(single_end), path(bam), path(vcf) from ch_markdup_bam_bcftools_consensus.join(ch_bcftools_variants_consensus, by: [0, 1])
     path fasta from ch_fasta
 
     output:
-    tuple val(sample), val(single_end), path("*consensus.masked.fa") into ch_bcftools_consensus_masked
-    path "*.{consensus.fa,tsv,pdf}"
+    tuple val(sample), val(single_end), path('*consensus.masked.fa') into ch_bcftools_consensus_masked
+    path '*.{consensus.fa,tsv,pdf}'
 
     script:
     """
@@ -1825,9 +1825,9 @@ process BCFTOOLS_SNPEFF {
     tuple file(db), file(config) from ch_snpeff_db_bcftools
 
     output:
-    path "*.snpEff.csv" into ch_bcftools_snpeff_mqc
-    path "*.vcf.gz*"
-    path "*.{txt,html}"
+    path '*.snpEff.csv' into ch_bcftools_snpeff_mqc
+    path '*.vcf.gz*'
+    path '*.{txt,html}'
 
     script:
     """
@@ -1853,7 +1853,7 @@ process BCFTOOLS_SNPEFF {
         "ANN[*].AA_LEN" "ANN[*].DISTANCE" "EFF[*].EFFECT" \\
         "EFF[*].FUNCLASS" "EFF[*].CODON" "EFF[*].AA" "EFF[*].AA_LEN" \\
         > ${sample}.snpSift.table.txt
-    	"""
+        """
 }
 
 /*
@@ -1863,23 +1863,23 @@ process BCFTOOLS_QUAST {
     label 'process_medium'
     publishDir "${params.outdir}/variants/bcftools", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (!filename.endsWith(".tsv")) filename
-                }
+                      if (!filename.endsWith('.tsv')) filename
+        }
 
     when:
     !params.skip_variants && 'bcftools' in callers && !params.skip_variants_quast
 
     input:
-    path consensus from ch_bcftools_consensus_masked.collect{ it[2] }
+    path consensus from ch_bcftools_consensus_masked.collect { it[2] }
     path fasta from ch_fasta
     path gff from ch_gff
 
     output:
-    path "quast"
-    path "report.tsv" into ch_bcftools_quast_mqc
+    path 'quast'
+    path 'report.tsv' into ch_bcftools_quast_mqc
 
     script:
-    features = params.gff ? "--features $gff" : ""
+    features = params.gff ? "--features $gff" : ''
     """
     quast.py \\
         --output-dir quast \\
@@ -1899,10 +1899,9 @@ process BCFTOOLS_QUAST {
  * STEP 5.8: Intersect variants with BCFTools
  */
 if (!params.skip_variants && callers.size() > 2) {
-
     ch_varscan2_highfreq_intersect
-        .join(ch_ivar_highfreq_intersect, by: [0,1])
-        .join(ch_bcftools_variants_intersect, by: [0,1])
+        .join(ch_ivar_highfreq_intersect, by: [0, 1])
+        .join(ch_bcftools_variants_intersect, by: [0, 1])
         .set { ch_varscan2_highfreq_intersect }
 
     process BCFTOOLS_ISEC {
@@ -1953,7 +1952,7 @@ process MAKE_BLAST_DB {
     path fasta from ch_fasta
 
     output:
-    path "BlastDB" into ch_blast_db
+    path 'BlastDB' into ch_blast_db
 
     script:
     """
@@ -1987,7 +1986,7 @@ if (!isOffline()) {
 
             script:
             db = "kraken2_${params.kraken2_db_name}"
-            ftp = params.kraken2_use_ftp ? "--use-ftp" : ""
+            ftp = params.kraken2_use_ftp ? '--use-ftp' : ''
             """
             kraken2-build --db $db --threads $task.cpus $ftp --download-taxonomy
             kraken2-build --db $db --threads $task.cpus $ftp --download-library $params.kraken2_db_name
@@ -1996,7 +1995,7 @@ if (!isOffline()) {
         }
     }
 } else {
-    exit 1, "NXF_OFFLINE=true or -offline has been set so cannot download files required to build Kraken2 database!"
+    exit 1, 'NXF_OFFLINE=true or -offline has been set so cannot download files required to build Kraken2 database!'
 }
 
 /*
@@ -2008,23 +2007,23 @@ if (params.protocol == 'amplicon' && !params.skip_assembly && !params.skip_ampli
         label 'process_medium'
         publishDir "${params.outdir}/assembly/cutadapt", mode: params.publish_dir_mode,
             saveAs: { filename ->
-                          if (filename.endsWith(".html")) "fastqc/$filename"
-                          else if (filename.endsWith(".zip")) "fastqc/zips/$filename"
-                          else if (filename.endsWith(".log")) "log/$filename"
+                          if (filename.endsWith('.html')) "fastqc/$filename"
+                          else if (filename.endsWith('.zip')) "fastqc/zips/$filename"
+                          else if (filename.endsWith('.log')) "log/$filename"
                           else params.save_trimmed ? filename : null
-                    }
+            }
 
         input:
         tuple val(sample), val(single_end), path(reads) from ch_fastp_cutadapt
         path amplicons from ch_amplicon_fasta
 
         output:
-        tuple val(sample), val(single_end), path("*.ptrim.fastq.gz") into ch_cutadapt_kraken2
-        path "*.{zip,html}" into ch_cutadapt_fastqc_mqc
-        path "*.log" into ch_cutadapt_mqc
+        tuple val(sample), val(single_end), path('*.ptrim.fastq.gz') into ch_cutadapt_kraken2
+        path '*.{zip,html}' into ch_cutadapt_fastqc_mqc
+        path '*.log' into ch_cutadapt_mqc
 
         script:
-        adapters = single_end ? "-a file:primers.fasta" : "-a file:primers.fasta -A file:primers.fasta"
+        adapters = single_end ? '-a file:primers.fasta' : '-a file:primers.fasta -A file:primers.fasta'
         out_reads = single_end ? "-o ${sample}.ptrim.fastq.gz" : "-o ${sample}_1.ptrim.fastq.gz -p ${sample}_2.ptrim.fastq.gz"
         """
         sed -r '/^[ACTGactg]+\$/ s/\$/X/g' $amplicons > primers.fasta
@@ -2043,7 +2042,6 @@ if (params.protocol == 'amplicon' && !params.skip_assembly && !params.skip_ampli
         """
     }
     ch_fastp_kraken2 = ch_cutadapt_kraken2
-
 } else {
     ch_cutadapt_mqc = Channel.empty()
     ch_cutadapt_fastqc_mqc = Channel.empty()
@@ -2058,25 +2056,24 @@ if (!params.skip_kraken2 && !params.skip_assembly) {
         label 'process_high'
         publishDir "${params.outdir}/assembly/kraken2", mode: params.publish_dir_mode,
             saveAs: { filename ->
-                          if (filename.endsWith(".txt")) filename
+                          if (filename.endsWith('.txt')) filename
                           else params.save_kraken2_fastq ? filename : null
-                    }
+            }
 
         input:
         tuple val(sample), val(single_end), path(reads) from ch_fastp_kraken2
         path db from ch_kraken2_db
 
         output:
-        tuple val(sample), val(single_end), path("*.viral*") into ch_kraken2_spades,
+        tuple val(sample), val(single_end), path('*.viral*') into ch_kraken2_spades,
                                                                   ch_kraken2_metaspades,
                                                                   ch_kraken2_unicycler,
                                                                   ch_kraken2_minia
-        path "*.report.txt" into ch_kraken2_report_mqc
-        path "*.host*"
-
+        path '*.report.txt' into ch_kraken2_report_mqc
+        path '*.host*'
 
         script:
-        pe = single_end ? "" : "--paired"
+        pe = single_end ? '' : '--paired'
         classified = single_end ? "${sample}.host.fastq" : "${sample}.host#.fastq"
         unclassified = single_end ? "${sample}.viral.fastq" : "${sample}.viral#.fastq"
         """
@@ -2115,10 +2112,10 @@ process SPADES {
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/spades", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.endsWith(".png")) "bandage/$filename"
-                      else if (filename.endsWith(".svg")) "bandage/$filename"
+                      if (filename.endsWith('.png')) "bandage/$filename"
+                      else if (filename.endsWith('.svg')) "bandage/$filename"
                       else filename
-                }
+        }
 
     when:
     !params.skip_assembly && 'spades' in assemblers
@@ -2127,13 +2124,13 @@ process SPADES {
     tuple val(sample), val(single_end), path(reads) from ch_kraken2_spades
 
     output:
-    tuple val(sample), val(single_end), path("*scaffolds.fa") into ch_spades_blast,
+    tuple val(sample), val(single_end), path('*scaffolds.fa') into ch_spades_blast,
                                                                    ch_spades_abacas,
                                                                    ch_spades_plasmidid,
                                                                    ch_spades_quast,
-                                                                   ch_spades_vg
-    path "*assembly.{gfa,png,svg}"
-
+                                                                   ch_spades_vg,
+                                                                   ch_spades_pangolin
+    path '*assembly.{gfa,png,svg}'
 
     script:
     input_reads = single_end ? "-s $reads" : "-1 ${reads[0]} -2 ${reads[1]}"
@@ -2171,7 +2168,7 @@ process SPADES_BLAST {
     path header from ch_blast_outfmt6_header
 
     output:
-    path "*.blast*"
+    path '*.blast*'
 
     script:
     """
@@ -2196,9 +2193,9 @@ process SPADES_ABACAS {
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/spades/abacas", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.indexOf("nucmer") > 0) "nucmer/$filename"
+                      if (filename.indexOf('nucmer') > 0) "nucmer/$filename"
                       else filename
-                }
+        }
 
     when:
     !params.skip_assembly && 'spades' in assemblers && !params.skip_abacas
@@ -2208,7 +2205,7 @@ process SPADES_ABACAS {
     path fasta from ch_fasta
 
     output:
-    path "*.abacas*"
+    path '*.abacas*'
 
     script:
     """
@@ -2254,23 +2251,23 @@ process SPADES_QUAST {
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/spades", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (!filename.endsWith(".tsv")) filename
-                }
+                      if (!filename.endsWith('.tsv')) filename
+        }
 
     when:
     !params.skip_assembly && 'spades' in assemblers && !params.skip_assembly_quast
 
     input:
-    path scaffolds from ch_spades_quast.collect{ it[2] }
+    path scaffolds from ch_spades_quast.collect { it[2] }
     path fasta from ch_fasta
     path gff from ch_gff
 
     output:
-    path "quast"
-    path "report.tsv" into ch_quast_spades_mqc
+    path 'quast'
+    path 'report.tsv' into ch_quast_spades_mqc
 
     script:
-    features = params.gff ? "--features $gff" : ""
+    features = params.gff ? "--features $gff" : ''
     """
     quast.py \\
         --output-dir quast \\
@@ -2291,11 +2288,11 @@ process SPADES_VG {
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/spades/variants", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.endsWith(".txt")) "bcftools_stats/$filename"
-                      else if (filename.endsWith(".png")) "bandage/$filename"
-                      else if (filename.endsWith(".svg")) "bandage/$filename"
+                      if (filename.endsWith('.txt')) "bcftools_stats/$filename"
+                      else if (filename.endsWith('.png')) "bandage/$filename"
+                      else if (filename.endsWith('.svg')) "bandage/$filename"
                       else filename
-                }
+        }
 
     when:
     !params.skip_assembly && 'spades' in assemblers && !params.skip_vg
@@ -2306,8 +2303,8 @@ process SPADES_VG {
 
     output:
     tuple val(sample), val(single_end), path("${sample}.vcf.gz*") into ch_spades_vg_vcf
-    path "*.bcftools_stats.txt" into ch_spades_vg_bcftools_mqc
-    path "*.{gfa,png,svg}"
+    path '*.bcftools_stats.txt' into ch_spades_vg_bcftools_mqc
+    path '*.{gfa,png,svg}'
 
     script:
     """
@@ -2356,9 +2353,9 @@ process SPADES_SNPEFF {
     tuple file(db), file(config) from ch_snpeff_db_spades
 
     output:
-    path "*.snpEff.csv" into ch_spades_snpeff_mqc
-    path "*.vcf.gz*"
-    path "*.{txt,html}"
+    path '*.snpEff.csv' into ch_spades_snpeff_mqc
+    path '*.vcf.gz*'
+    path '*.{txt,html}'
 
     script:
     """
@@ -2384,9 +2381,37 @@ process SPADES_SNPEFF {
         "ANN[*].AA_LEN" "ANN[*].DISTANCE" "EFF[*].EFFECT" \\
         "EFF[*].FUNCLASS" "EFF[*].CODON" "EFF[*].AA" "EFF[*].AA_LEN" \\
         > ${sample}.snpSift.table.txt
-    	"""
+        """
 }
 
+/*
+ * STEP 6.3.7: Run Pangolin on SPAdes de novo assembly
+ */
+process SPADES_PANGOLIN {
+    label 'process_medium'
+    label 'error_ignore'
+    publishDir "${params.outdir}/assembly/spades", mode: params.publish_dir_mode,
+        saveAs: { filename ->
+                      if (!filename.endsWith('.csv')) filename
+        }
+
+    when:
+    !params.skip_assembly && 'spades' in assemblers && !params.skip_assembly_quast
+
+    input:
+    path scaffolds from ch_spades_pangolin.collect { it[2] }
+
+    output:
+    path 'spades.pangolin_lineage_report.csv' into ch_pangolin_spades_mqc
+
+    script:
+    features = params.gff ? "--features $gff" : ''
+    """
+    pangoling \\
+        $fasta \\
+        --outfile spades.pangolin_lineage_report.csv \\
+    """
+}
 ////////////////////////////////////////////////////
 /* --               METASPADES                 -- */
 ////////////////////////////////////////////////////
@@ -2400,10 +2425,10 @@ process METASPADES {
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/metaspades", mode: params.publish_dir_mode,
     saveAs: { filename ->
-                  if (filename.endsWith(".png")) "bandage/$filename"
-                  else if (filename.endsWith(".svg")) "bandage/$filename"
+                  if (filename.endsWith('.png')) "bandage/$filename"
+                  else if (filename.endsWith('.svg')) "bandage/$filename"
                   else filename
-            }
+    }
 
     when:
     !params.skip_assembly && 'metaspades' in assemblers && !single_end
@@ -2412,13 +2437,12 @@ process METASPADES {
     tuple val(sample), val(single_end), path(reads) from ch_kraken2_metaspades
 
     output:
-    tuple val(sample), val(single_end), path("*scaffolds.fa") into ch_metaspades_blast,
+    tuple val(sample), val(single_end), path('*scaffolds.fa') into ch_metaspades_blast,
                                                                    ch_metaspades_abacas,
                                                                    ch_metaspades_plasmidid,
                                                                    ch_metaspades_quast,
                                                                    ch_metaspades_vg
-    path "*assembly.{gfa,png,svg}"
-
+    path '*assembly.{gfa,png,svg}'
 
     script:
     """
@@ -2457,7 +2481,7 @@ process METASPADES_BLAST {
     path header from ch_blast_outfmt6_header
 
     output:
-    path "*.blast*"
+    path '*.blast*'
 
     script:
     """
@@ -2482,9 +2506,9 @@ process METASPADES_ABACAS {
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/metaspades/abacas", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.indexOf("nucmer") > 0) "nucmer/$filename"
+                      if (filename.indexOf('nucmer') > 0) "nucmer/$filename"
                       else filename
-                }
+        }
 
     when:
     !params.skip_assembly && 'metaspades' in assemblers && !single_end && !params.skip_abacas
@@ -2494,7 +2518,7 @@ process METASPADES_ABACAS {
     path fasta from ch_fasta
 
     output:
-    path "*.abacas*"
+    path '*.abacas*'
 
     script:
     """
@@ -2540,23 +2564,23 @@ process METASPADES_QUAST {
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/metaspades", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (!filename.endsWith(".tsv")) filename
-                }
+                      if (!filename.endsWith('.tsv')) filename
+        }
 
     when:
     !params.skip_assembly && 'metaspades' in assemblers && !single_end && !params.skip_assembly_quast
 
     input:
-    path scaffolds from ch_metaspades_quast.collect{ it[2] }
+    path scaffolds from ch_metaspades_quast.collect { it[2] }
     path fasta from ch_fasta
     path gff from ch_gff
 
     output:
-    path "quast"
-    path "report.tsv" into ch_quast_metaspades_mqc
+    path 'quast'
+    path 'report.tsv' into ch_quast_metaspades_mqc
 
     script:
-    features = params.gff ? "--features $gff" : ""
+    features = params.gff ? "--features $gff" : ''
     """
     quast.py \\
         --output-dir quast \\
@@ -2577,11 +2601,11 @@ process METASPADES_VG {
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/metaspades/variants", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.endsWith(".txt")) "bcftools_stats/$filename"
-                      else if (filename.endsWith(".png")) "bandage/$filename"
-                      else if (filename.endsWith(".svg")) "bandage/$filename"
+                      if (filename.endsWith('.txt')) "bcftools_stats/$filename"
+                      else if (filename.endsWith('.png')) "bandage/$filename"
+                      else if (filename.endsWith('.svg')) "bandage/$filename"
                       else filename
-                }
+        }
 
     when:
     !params.skip_assembly && 'metaspades' in assemblers && !single_end && !params.skip_vg
@@ -2592,8 +2616,8 @@ process METASPADES_VG {
 
     output:
     tuple val(sample), val(single_end), path("${sample}.vcf.gz*") into ch_metaspades_vg_vcf
-    path "*.bcftools_stats.txt" into ch_metaspades_vg_bcftools_mqc
-    path "*.{gfa,png,svg}"
+    path '*.bcftools_stats.txt' into ch_metaspades_vg_bcftools_mqc
+    path '*.{gfa,png,svg}'
 
     script:
     """
@@ -2642,9 +2666,9 @@ process METASPADES_SNPEFF {
     tuple file(db), file(config) from ch_snpeff_db_metaspades
 
     output:
-    path "*.snpEff.csv" into ch_metaspades_snpeff_mqc
-    path "*.vcf.gz*"
-    path "*.{txt,html}"
+    path '*.snpEff.csv' into ch_metaspades_snpeff_mqc
+    path '*.vcf.gz*'
+    path '*.{txt,html}'
 
     script:
     """
@@ -2670,7 +2694,7 @@ process METASPADES_SNPEFF {
         "ANN[*].AA_LEN" "ANN[*].DISTANCE" "EFF[*].EFFECT" \\
         "EFF[*].FUNCLASS" "EFF[*].CODON" "EFF[*].AA" "EFF[*].AA_LEN" \\
         > ${sample}.snpSift.table.txt
-    	"""
+        """
 }
 
 ////////////////////////////////////////////////////
@@ -2686,10 +2710,10 @@ process UNICYCLER {
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/unicycler", mode: params.publish_dir_mode,
     saveAs: { filename ->
-                  if (filename.endsWith(".png")) "bandage/$filename"
-                  else if (filename.endsWith(".svg")) "bandage/$filename"
+                  if (filename.endsWith('.png')) "bandage/$filename"
+                  else if (filename.endsWith('.svg')) "bandage/$filename"
                   else filename
-            }
+    }
 
     when:
     !params.skip_assembly && 'unicycler' in assemblers
@@ -2698,12 +2722,12 @@ process UNICYCLER {
     tuple val(sample), val(single_end), path(reads) from ch_kraken2_unicycler
 
     output:
-    tuple val(sample), val(single_end), path("*scaffolds.fa") into ch_unicycler_blast,
+    tuple val(sample), val(single_end), path('*scaffolds.fa') into ch_unicycler_blast,
                                                                    ch_unicycler_abacas,
                                                                    ch_unicycler_plasmidid,
                                                                    ch_unicycler_quast,
                                                                    ch_unicycler_vg
-    path "*assembly.{gfa,png,svg}"
+    path '*assembly.{gfa,png,svg}'
 
     script:
     input_reads = single_end ? "-s $reads" : "-1 ${reads[0]} -2 ${reads[1]}"
@@ -2741,7 +2765,7 @@ process UNICYCLER_BLAST {
     path header from ch_blast_outfmt6_header
 
     output:
-    path "*.blast*"
+    path '*.blast*'
 
     script:
     """
@@ -2766,9 +2790,9 @@ process UNICYCLER_ABACAS {
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/unicycler/abacas", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.indexOf("nucmer") > 0) "nucmer/$filename"
+                      if (filename.indexOf('nucmer') > 0) "nucmer/$filename"
                       else filename
-                }
+        }
 
     when:
     !params.skip_assembly && 'unicycler' in assemblers && !params.skip_abacas
@@ -2778,7 +2802,7 @@ process UNICYCLER_ABACAS {
     path fasta from ch_fasta
 
     output:
-    path "*.abacas*"
+    path '*.abacas*'
 
     script:
     """
@@ -2824,23 +2848,23 @@ process UNICYCLER_QUAST {
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/unicycler", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (!filename.endsWith(".tsv")) filename
-                }
+                      if (!filename.endsWith('.tsv')) filename
+        }
 
     when:
     !params.skip_assembly && 'unicycler' in assemblers && !params.skip_assembly_quast
 
     input:
-    path scaffolds from ch_unicycler_quast.collect{ it[2] }
+    path scaffolds from ch_unicycler_quast.collect { it[2] }
     path fasta from ch_fasta
     path gff from ch_gff
 
     output:
-    path "quast"
-    path "report.tsv" into ch_quast_unicycler_mqc
+    path 'quast'
+    path 'report.tsv' into ch_quast_unicycler_mqc
 
     script:
-    features = params.gff ? "--features $gff" : ""
+    features = params.gff ? "--features $gff" : ''
     """
     quast.py \\
         --output-dir quast \\
@@ -2861,11 +2885,11 @@ process UNICYCLER_VG {
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/unicycler/variants", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.endsWith(".txt")) "bcftools_stats/$filename"
-                      else if (filename.endsWith(".png")) "bandage/$filename"
-                      else if (filename.endsWith(".svg")) "bandage/$filename"
+                      if (filename.endsWith('.txt')) "bcftools_stats/$filename"
+                      else if (filename.endsWith('.png')) "bandage/$filename"
+                      else if (filename.endsWith('.svg')) "bandage/$filename"
                       else filename
-                }
+        }
 
     when:
     !params.skip_assembly && 'unicycler' in assemblers && !params.skip_vg
@@ -2876,8 +2900,8 @@ process UNICYCLER_VG {
 
     output:
     tuple val(sample), val(single_end), path("${sample}.vcf.gz*") into ch_unicycler_vg_vcf
-    path "*.bcftools_stats.txt" into ch_unicycler_vg_bcftools_mqc
-    path "*.{gfa,png,svg}"
+    path '*.bcftools_stats.txt' into ch_unicycler_vg_bcftools_mqc
+    path '*.{gfa,png,svg}'
 
     script:
     """
@@ -2926,9 +2950,9 @@ process UNICYCLER_SNPEFF {
     tuple file(db), file(config) from ch_snpeff_db_unicycler
 
     output:
-    path "*.snpEff.csv" into ch_unicycler_snpeff_mqc
-    path "*.vcf.gz*"
-    path "*.{txt,html}"
+    path '*.snpEff.csv' into ch_unicycler_snpeff_mqc
+    path '*.vcf.gz*'
+    path '*.{txt,html}'
 
     script:
     """
@@ -2954,7 +2978,7 @@ process UNICYCLER_SNPEFF {
         "ANN[*].AA_LEN" "ANN[*].DISTANCE" "EFF[*].EFFECT" \\
         "EFF[*].FUNCLASS" "EFF[*].CODON" "EFF[*].AA" "EFF[*].AA_LEN" \\
         > ${sample}.snpSift.table.txt
-    	"""
+        """
 }
 
 ////////////////////////////////////////////////////
@@ -2977,7 +3001,7 @@ process MINIA {
     tuple val(sample), val(single_end), path(reads) from ch_kraken2_minia
 
     output:
-    tuple val(sample), val(single_end), path("*scaffolds.fa") into ch_minia_vg,
+    tuple val(sample), val(single_end), path('*scaffolds.fa') into ch_minia_vg,
                                                                    ch_minia_blast,
                                                                    ch_minia_abacas,
                                                                    ch_minia_plasmidid,
@@ -2985,7 +3009,7 @@ process MINIA {
 
     script:
     """
-    echo "${reads.join("\n")}" > input_files.txt
+    echo "${reads.join('\n')}" > input_files.txt
     minia \\
         -kmer-size $params.minia_kmer \\
         -abundance-min 20 \\
@@ -3014,7 +3038,7 @@ process MINIA_BLAST {
     path header from ch_blast_outfmt6_header
 
     output:
-    path "*.blast*"
+    path '*.blast*'
 
     script:
     """
@@ -3039,9 +3063,9 @@ process MINIA_ABACAS {
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/minia/${params.minia_kmer}/abacas", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.indexOf("nucmer") > 0) "nucmer/$filename"
+                      if (filename.indexOf('nucmer') > 0) "nucmer/$filename"
                       else filename
-                }
+        }
 
     when:
     !params.skip_assembly && 'minia' in assemblers && !params.skip_abacas
@@ -3051,7 +3075,7 @@ process MINIA_ABACAS {
     path fasta from ch_fasta
 
     output:
-    path "*.abacas*"
+    path '*.abacas*'
 
     script:
     """
@@ -3097,23 +3121,23 @@ process MINIA_QUAST {
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/minia/${params.minia_kmer}", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (!filename.endsWith(".tsv")) filename
-                }
+                      if (!filename.endsWith('.tsv')) filename
+        }
 
     when:
     !params.skip_assembly && 'minia' in assemblers && !params.skip_assembly_quast
 
     input:
-    path scaffolds from ch_minia_quast.collect{ it[2] }
+    path scaffolds from ch_minia_quast.collect { it[2] }
     path fasta from ch_fasta
     path gff from ch_gff
 
     output:
-    path "quast"
-    path "report.tsv" into ch_quast_minia_mqc
+    path 'quast'
+    path 'report.tsv' into ch_quast_minia_mqc
 
     script:
-    features = params.gff ? "--features $gff" : ""
+    features = params.gff ? "--features $gff" : ''
     """
     quast.py \\
         --output-dir quast \\
@@ -3134,11 +3158,11 @@ process MINIA_VG {
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/minia/${params.minia_kmer}/variants", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.endsWith(".txt")) "bcftools_stats/$filename"
-                      else if (filename.endsWith(".png")) "bandage/$filename"
-                      else if (filename.endsWith(".svg")) "bandage/$filename"
+                      if (filename.endsWith('.txt')) "bcftools_stats/$filename"
+                      else if (filename.endsWith('.png')) "bandage/$filename"
+                      else if (filename.endsWith('.svg')) "bandage/$filename"
                       else filename
-                }
+        }
 
     when:
     !params.skip_assembly && 'minia' in assemblers && !params.skip_vg
@@ -3149,8 +3173,8 @@ process MINIA_VG {
 
     output:
     tuple val(sample), val(single_end), path("${sample}.vcf.gz*") into ch_minia_vg_vcf
-    path "*.bcftools_stats.txt" into ch_minia_vg_bcftools_mqc
-    path "*.{gfa,png,svg}"
+    path '*.bcftools_stats.txt' into ch_minia_vg_bcftools_mqc
+    path '*.{gfa,png,svg}'
 
     script:
     """
@@ -3199,9 +3223,9 @@ process MINIA_SNPEFF {
     tuple file(db), file(config) from ch_snpeff_db_minia
 
     output:
-    path "*.snpEff.csv" into ch_minia_snpeff_mqc
-    path "*.vcf.gz*"
-    path "*.{txt,html}"
+    path '*.snpEff.csv' into ch_minia_snpeff_mqc
+    path '*.vcf.gz*'
+    path '*.{txt,html}'
 
     script:
     """
@@ -3227,7 +3251,7 @@ process MINIA_SNPEFF {
         "ANN[*].AA_LEN" "ANN[*].DISTANCE" "EFF[*].EFFECT" \\
         "EFF[*].FUNCLASS" "EFF[*].CODON" "EFF[*].AA" "EFF[*].AA_LEN" \\
         > ${sample}.snpSift.table.txt
-    	"""
+        """
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3238,9 +3262,9 @@ process MINIA_SNPEFF {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-Channel.from(summary.collect{ [it.key, it.value] })
-    .map { k,v -> "<dt>$k</dt><dd><samp>${v ?: '<span style=\"color:#999999;\">N/A</a>'}</samp></dd>" }
-    .reduce { a, b -> return [a, b].join("\n            ") }
+Channel.from(summary.collect { [it.key, it.value] })
+    .map { k, v -> "<dt>$k</dt><dd><samp>${v ?: '<span style=\"color:#999999;\">N/A</a>'}</samp></dd>" }
+    .reduce { a, b -> return [a, b].join('\n            ') }
     .map { x -> """
     id: 'nf-core-viralrecon-summary'
     description: " - this information is collected when the pipeline is started."
@@ -3260,13 +3284,13 @@ Channel.from(summary.collect{ [it.key, it.value] })
 process get_software_versions {
     publishDir "${params.outdir}/pipeline_info", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.endsWith(".csv")) filename
+                      if (filename.endsWith('.csv')) filename
                       else null
-                }
+        }
 
     output:
-    path "software_versions_mqc.yaml" into ch_software_versions_yaml
-    path "software_versions.csv"
+    path 'software_versions_mqc.yaml' into ch_software_versions_yaml
+    path 'software_versions.csv'
 
     script:
     """
@@ -3310,10 +3334,10 @@ process MULTIQC {
     label 'process_medium'
     publishDir "${params.outdir}", mode: params.publish_dir_mode,
         saveAs: { filename ->
-                      if (filename.endsWith("assembly_metrics_mqc.tsv")) "assembly/$filename"
-                      else if (filename.endsWith("variants_metrics_mqc.tsv")) "variants/$filename"
+                      if (filename.endsWith('assembly_metrics_mqc.tsv')) "assembly/$filename"
+                      else if (filename.endsWith('variants_metrics_mqc.tsv')) "variants/$filename"
                       else "multiqc/$filename"
-                }
+        }
 
     when:
     !params.skip_multiqc
@@ -3359,16 +3383,16 @@ process MULTIQC {
     path ('minia/snpeff/*') from ch_minia_snpeff_mqc.collect().ifEmpty([])
     path ('minia/quast/*') from ch_quast_minia_mqc.collect().ifEmpty([])
     path ('software_versions/*') from ch_software_versions_yaml.collect()
-    path workflow_summary from ch_workflow_summary.collectFile(name: "workflow_summary_mqc.yaml")
+    path workflow_summary from ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml')
 
     output:
-    path "*multiqc_report.html" into ch_multiqc_report
-    path "*_data"
-    path "*.tsv"
+    path '*multiqc_report.html' into ch_multiqc_report
+    path '*_data'
+    path '*.tsv'
 
     script:
     rtitle = custom_runName ? "--title \"$custom_runName\"" : ''
-    rfilename = custom_runName ? "--filename " + custom_runName.replaceAll('\\W','_').replaceAll('_+','_') + "_multiqc_report" : ''
+    rfilename = custom_runName ? '--filename ' + custom_runName.replaceAll('\\W', '_').replaceAll('_+', '_') + '_multiqc_report' : ''
     custom_config_file = params.multiqc_config ? "--config $mqc_custom_config" : ''
     """
     multiqc . -f $rtitle $rfilename $custom_config_file
@@ -3385,7 +3409,7 @@ process output_documentation {
     path images from ch_output_docs_images
 
     output:
-    path "results_description.html"
+    path 'results_description.html'
 
     script:
     """
@@ -3397,7 +3421,6 @@ process output_documentation {
  * Completion e-mail notification
  */
 workflow.onComplete {
-
     // Set up the e-mail variables
     def subject = "[nf-core/viralrecon] Successful: $workflow.runName"
     if (fail_mapped_reads.size() > 0) {
@@ -3442,7 +3465,7 @@ workflow.onComplete {
             }
         }
     } catch (all) {
-        log.warn "[nf-core/viralrecon] Could not attach MultiQC report to summary email"
+        log.warn '[nf-core/viralrecon] Could not attach MultiQC report to summary email'
     }
 
     // Check if we are only sending emails on failure
@@ -3480,7 +3503,7 @@ workflow.onComplete {
             // Catch failures and try with plaintext
             def mail_cmd = [ 'mail', '-s', subject, '--content-type=text/html', email_address ]
             if ( mqc_report.size() <= params.max_multiqc_email_size.toBytes() ) {
-              mail_cmd += [ '-A', mqc_report ]
+                mail_cmd += [ '-A', mqc_report ]
             }
             mail_cmd.execute() << email_html
             log.info "[nf-core/viralrecon] Sent summary e-mail to $email_address (mail)"
@@ -3492,15 +3515,15 @@ workflow.onComplete {
     if (!output_d.exists()) {
         output_d.mkdirs()
     }
-    def output_hf = new File(output_d, "pipeline_report.html")
+    def output_hf = new File(output_d, 'pipeline_report.html')
     output_hf.withWriter { w -> w << email_html }
-    def output_tf = new File(output_d, "pipeline_report.txt")
+    def output_tf = new File(output_d, 'pipeline_report.txt')
     output_tf.withWriter { w -> w << email_txt }
 
     c_green = params.monochrome_logs ? '' : "\033[0;32m";
     c_purple = params.monochrome_logs ? '' : "\033[0;35m";
     c_red = params.monochrome_logs ? '' : "\033[0;31m";
-    c_reset = params.monochrome_logs ? '' : "\033[0m";
+    c_reset = params.monochrome_logs ? '' : "\033[0m"
 
     if (pass_mapped_reads.size() > 0) {
         idx = 0
@@ -3510,11 +3533,11 @@ workflow.onComplete {
             sample_mapped += "    ${sample.key}: ${sample.value}\n"
             idx += 1
             if (idx > 5) {
-                sample_mapped += "    ..see pipeline reports for full list\n"
+                sample_mapped += '    ..see pipeline reports for full list\n'
                 break
             }
         }
-        //log.info "[${c_purple}nf-core/viralrecon${c_reset}] ${c_green}${pass_mapped_reads.size()}/${total_count} samples passed minimum mapped reads check\n${sample_mapped}${c_reset}"
+    //log.info "[${c_purple}nf-core/viralrecon${c_reset}] ${c_green}${pass_mapped_reads.size()}/${total_count} samples passed minimum mapped reads check\n${sample_mapped}${c_reset}"
     }
     if (fail_mapped_reads.size() > 0) {
         sample_mapped = ''
@@ -3536,7 +3559,6 @@ workflow.onComplete {
         checkHostname()
         log.info "-${c_purple}[nf-core/viralrecon]${c_red} Pipeline completed with errors${c_reset}-"
     }
-
 }
 
 def nfcoreHeader() {
@@ -3544,14 +3566,14 @@ def nfcoreHeader() {
     c_black = params.monochrome_logs ? '' : "\033[0;30m";
     c_blue = params.monochrome_logs ? '' : "\033[0;34m";
     c_cyan = params.monochrome_logs ? '' : "\033[0;36m";
-    c_dim = params.monochrome_logs ? '' : "\033[2m";
+    c_dim = params.monochrome_logs ? '' : "\033[2m"
     c_green = params.monochrome_logs ? '' : "\033[0;32m";
     c_purple = params.monochrome_logs ? '' : "\033[0;35m";
-    c_reset = params.monochrome_logs ? '' : "\033[0m";
+    c_reset = params.monochrome_logs ? '' : "\033[0m"
     c_white = params.monochrome_logs ? '' : "\033[0;37m";
     c_yellow = params.monochrome_logs ? '' : "\033[0;33m";
 
-    return """    -${c_dim}--------------------------------------------------${c_reset}-
+    return '''    -${c_dim}--------------------------------------------------${c_reset}-
                                             ${c_green},--.${c_black}/${c_green},-.${c_reset}
     ${c_blue}        ___     __   __   __   ___     ${c_green}/,-._.--~\'${c_reset}
     ${c_blue}  |\\ | |__  __ /  ` /  \\ |__) |__         ${c_yellow}}  {${c_reset}
@@ -3559,7 +3581,7 @@ def nfcoreHeader() {
                                             ${c_green}`._,._,\'${c_reset}
     ${c_purple}  nf-core/viralrecon v${workflow.manifest.version}${c_reset}
     -${c_dim}--------------------------------------------------${c_reset}-
-    """.stripIndent()
+    '''.stripIndent()
 }
 
 def checkHostname() {
@@ -3568,15 +3590,15 @@ def checkHostname() {
     def c_red = params.monochrome_logs ? '' : "\033[1;91m"
     def c_yellow_bold = params.monochrome_logs ? '' : "\033[1;93m"
     if (params.hostnames) {
-        def hostname = "hostname".execute().text.trim()
+        def hostname = 'hostname'.execute().text.trim()
         params.hostnames.each { prof, hnames ->
             hnames.each { hname ->
                 if (hostname.contains(hname) && !workflow.profile.contains(prof)) {
-                    log.error "====================================================\n" +
+                    log.error '====================================================\n' +
                             "  ${c_red}WARNING!${c_reset} You are running with `-profile $workflow.profile`\n" +
                             "  but your machine hostname is ${c_white}'$hostname'${c_reset}\n" +
                             "  ${c_yellow_bold}It's highly recommended that you use `-profile $prof${c_reset}`\n" +
-                            "============================================================"
+                            '============================================================'
                 }
             }
         }
@@ -3588,7 +3610,7 @@ def isOffline() {
     try {
         return NXF_OFFLINE as Boolean
     }
-    catch( Exception e ) {
+    catch ( Exception e ) {
         return false
     }
 }
