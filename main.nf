@@ -2390,7 +2390,8 @@ process METASPADES {
                                                                    ch_metaspades_abacas,
                                                                    ch_metaspades_plasmidid,
                                                                    ch_metaspades_quast,
-                                                                   ch_metaspades_vg
+                                                                   ch_metaspades_vg,
+                                                                   ch_metaspades_pangolin
     path "*assembly.{gfa,png,svg}"
 
 
@@ -2638,6 +2639,33 @@ process METASPADES_SNPEFF {
         "EFF[*].FUNCLASS" "EFF[*].CODON" "EFF[*].AA" "EFF[*].AA_LEN" \\
         > ${sample}.snpSift.table.txt
     	"""
+}
+
+/*
+ * STEP 6.3.7: Run Pangolin on MetaSPAdes de novo assembly
+ */
+process METASPADES_PANGOLIN {
+    label 'process_medium'
+    label 'error_ignore'
+    publishDir "${params.outdir}/assembly/metaspades/pangolin", mode: params.publish_dir_mode,
+
+    when:
+    !params.skip_assembly && 'metaspades' in assemblers && !params.skip_assembly_quast
+
+    input:
+    path gff from ch_gff
+    path scaffolds from ch_metaspades_pangolin.collect { it[2] }
+
+    output:
+    path 'metaspades.pangolin_lineage_report.csv'
+
+    script:
+    features = params.gff ? "--features $gff" : ''
+    """
+    pangolin \\
+        $scaffolds \\
+        --outfile metaspades.pangolin_lineage_report.csv \\
+    """
 }
 
 ////////////////////////////////////////////////////
