@@ -1493,17 +1493,17 @@ process VARSCAN2_PANGOLIN {
 
     input:
     path gff from ch_gff
-    path consensus from ch_varscan2_consensus_pangolin.collect{ it[2] }
+    tuple val(sample), val(single_end), path(consensus) from ch_varscan2_consensus_pangolin
 
     output:
-    path 'varscan2.pangolin_lineage_report.csv'
+    path "${sample}.varscan2.pangolin_lineage_report.csv"
 
     script:
     features = params.gff ? "--features $gff" : ''
     """
     pangolin \\
         $consensus \\
-        --outfile varscan2.pangolin_lineage_report.csv \\
+        --outfile ${sample}.varscan2.pangolin_lineage_report.csv \\
     """
 }
 
@@ -1712,17 +1712,17 @@ process IVAR_PANGOLIN {
 
     input:
     path gff from ch_gff
-    path consensus from ch_ivar_consensus_pangolin.collect{ it[2] }
+    tuple val(sample), val(single_end), path(consensus) from ch_ivar_consensus_pangolin
 
     output:
-    path 'ivar.pangolin_lineage_report.csv'
+    path "${sample}.ivar.pangolin_lineage_report.csv"
 
     script:
     features = params.gff ? "--features $gff" : ''
     """
     pangolin \\
         $consensus \\
-        --outfile ivar.pangolin_lineage_report.csv \\
+        --outfile ${sample}.ivar.pangolin_lineage_report.csv \\
     """
 }
 
@@ -1913,17 +1913,18 @@ process BCFTOOLS_PANGOLIN {
 
     input:
     path gff from ch_gff
-    path consensus from ch_bcftools_consensus_masked_pangolin.collect{ it[2] }
+    tuple val(sample), val(single_end), path(consensus) from ch_bcftools_consensus_masked_pangolin
+
 
     output:
-    path 'bcftools.pangolin_lineage_report.csv'
+    path "${sample}bcftools.pangolin_lineage_report.csv"
 
     script:
     features = params.gff ? "--features $gff" : ''
     """
     pangolin \\
         $consensus \\
-        --outfile bcftools.pangolin_lineage_report.csv \\
+        --outfile ${sample}.bcftools.pangolin_lineage_report.csv \\
     """
 }
 
