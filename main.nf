@@ -3330,7 +3330,8 @@ process MINIA_PANGOLIN {
     !params.skip_assembly && 'minia' in assemblers
 
     input:
-    path gff from ch_gff    tuple val(sample), val(single_end), path(scaffolds) from ch_minia_pangolin
+    path gff from ch_gff    
+    tuple val(sample), val(single_end), path(scaffolds) from ch_minia_pangolin
 
     output:
     path "${sample}.minia.pangolin_lineage_report.csv"
