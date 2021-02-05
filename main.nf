@@ -1484,6 +1484,7 @@ process VARSCAN2_QUAST {
  * STEP 5.7.1.4: Run Pangolin on VarScan2 consensus sequence
  */
 process VARSCAN2_PANGOLIN {
+    tag "$sample"
     label 'process_medium'
     label 'error_ignore'
     publishDir "${params.outdir}/variants/varscan2/pangolin", mode: params.publish_dir_mode,
@@ -1492,14 +1493,12 @@ process VARSCAN2_PANGOLIN {
     !params.skip_variants && 'varscan2' in callers
 
     input:
-    path gff from ch_gff
     tuple val(sample), val(single_end), path(consensus) from ch_varscan2_consensus_pangolin
 
     output:
     path "${sample}.varscan2.pangolin_lineage_report.csv"
 
     script:
-    features = params.gff ? "--features $gff" : ''
     """
     pangolin \\
         $consensus \\
@@ -1703,6 +1702,7 @@ process IVAR_QUAST {
  * STEP 5.7.2.4: Run Pangolin on iVar consensus sequence
  */
 process IVAR_PANGOLIN {
+    tag "$sample"
     label 'process_medium'
     label 'error_ignore'
     publishDir "${params.outdir}/variants/ivar/pangolin", mode: params.publish_dir_mode,
@@ -1711,14 +1711,12 @@ process IVAR_PANGOLIN {
     !params.skip_variants && 'ivar' in callers
 
     input:
-    path gff from ch_gff
     tuple val(sample), val(single_end), path(consensus) from ch_ivar_consensus_pangolin
 
     output:
     path "${sample}.ivar.pangolin_lineage_report.csv"
 
     script:
-    features = params.gff ? "--features $gff" : ''
     """
     pangolin \\
         $consensus \\
@@ -1904,6 +1902,7 @@ process BCFTOOLS_QUAST {
  * STEP 5.7.3.4: Run Pangolin on BCFTools consensus sequence
  */
 process BCFTOOLS_PANGOLIN {
+    tag "$sample"
     label 'process_medium'
     label 'error_ignore'
     publishDir "${params.outdir}/variants/bcftools/pangolin", mode: params.publish_dir_mode,
@@ -1912,15 +1911,12 @@ process BCFTOOLS_PANGOLIN {
     !params.skip_variants && 'bcftools' in callers
 
     input:
-    path gff from ch_gff
     tuple val(sample), val(single_end), path(consensus) from ch_bcftools_consensus_masked_pangolin
-
 
     output:
     path "${sample}.bcftools.pangolin_lineage_report.csv"
 
     script:
-    features = params.gff ? "--features $gff" : ''
     """
     pangolin \\
         $consensus \\
@@ -2421,6 +2417,7 @@ process SPADES_SNPEFF {
  * STEP 6.3.7: Run Pangolin on SPAdes de novo assembly
  */
 process SPADES_PANGOLIN {
+    tag "$sample"
     label 'process_medium'
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/spades/pangolin", mode: params.publish_dir_mode,
@@ -2429,14 +2426,12 @@ process SPADES_PANGOLIN {
     !params.skip_assembly && 'spades' in assemblers && !params.skip_assembly_quast
 
     input:
-    path gff from ch_gff
     tuple val(sample), val(single_end), path(scaffolds) from ch_spades_pangolin
 
     output:
     path "${sample}.spades.pangolin_lineage_report.csv"
 
     script:
-    features = params.gff ? "--features $gff" : ''
     """
     pangolin \\
         $scaffolds \\
@@ -2728,22 +2723,21 @@ process METASPADES_SNPEFF {
  * STEP 6.3.7: Run Pangolin on MetaSPAdes de novo assembly
  */
 process METASPADES_PANGOLIN {
+    tag "$sample"
     label 'process_medium'
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/metaspades/pangolin", mode: params.publish_dir_mode,
 
     when:
-    !params.skip_assembly && 'metaspades' in assemblers && !params.skip_assembly_quast
+    !params.skip_assembly && 'metaspades' in assemblers
 
     input:
-    path gff from ch_gff
     tuple val(sample), val(single_end), path(scaffolds) from ch_metaspades_pangolin
 
     output:
     path "${sample}.metaspades.pangolin_lineage_report.csv"
 
     script:
-    features = params.gff ? "--features $gff" : ''
     """
     pangolin \\
         $scaffolds \\
@@ -3033,21 +3027,21 @@ process UNICYCLER_SNPEFF {
  * STEP 6.3.7: Run Pangolin on Unicycler de novo assembly
  */
 process UNICYCLER_PANGOLIN {
+    tag "$sample"
     label 'process_medium'
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/unicycler/pangolin", mode: params.publish_dir_mode,
 
     when:
-    !params.skip_assembly && 'unicycler' in assemblers && !params.skip_assembly_quast
+    !params.skip_assembly && 'unicycler' in assemblers
 
     input:
-    path gff from ch_gff
     tuple val(sample), val(single_end), path(scaffolds) from ch_unicycler_pangolin
+
     output:
     path "${sample}.unicycler.pangolin_lineage_report.csv"
 
     script:
-    features = params.gff ? "--features $gff" : ''
     """
     pangolin \\
         $scaffolds \\
@@ -3327,22 +3321,21 @@ process MINIA_SNPEFF {
  * STEP 6.3.7: Run Pangolin on Minia de novo assembly
  */
 process MINIA_PANGOLIN {
+    tag "$sample"
     label 'process_medium'
     label 'error_ignore'
     publishDir "${params.outdir}/assembly/minia/pangolin", mode: params.publish_dir_mode,
 
     when:
-    !params.skip_assembly && 'minia' in assemblers && !params.skip_assembly_quast
+    !params.skip_assembly && 'minia' in assemblers
 
     input:
-    path gff from ch_gff
-    tuple val(sample), val(single_end), path(scaffolds) from ch_minia_pangolin
+    path gff from ch_gff    tuple val(sample), val(single_end), path(scaffolds) from ch_minia_pangolin
 
     output:
     path "${sample}.minia.pangolin_lineage_report.csv"
 
     script:
-    features = params.gff ? "--features $gff" : ''
     """
     pangolin \\
         $scaffolds \\
