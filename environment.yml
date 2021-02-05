@@ -33,7 +33,7 @@ dependencies:
   - bioconda::multiqc=1.9
 
   ## variants
-  - bioconda::bowtie2=2.4.2 
+  - bioconda::bowtie2=2.4.2
   - bioconda::picard=2.23.8
   - bioconda::mosdepth=0.2.9
   - bioconda::ivar=1.3
@@ -58,4 +58,5 @@ dependencies:
   - bioconda::blast=2.10.1
   - bioconda::plasmidid=1.6.3
   - bioconda::bandage=0.8.1
+  - bioconda::pangolin=2.1.7
   - hcc::abacas=1.3.1
