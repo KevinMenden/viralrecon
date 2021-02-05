@@ -1917,7 +1917,7 @@ process BCFTOOLS_PANGOLIN {
 
 
     output:
-    path "${sample}bcftools.pangolin_lineage_report.csv"
+    path "${sample}.bcftools.pangolin_lineage_report.csv"
 
     script:
     features = params.gff ? "--features $gff" : ''
@@ -2430,17 +2430,17 @@ process SPADES_PANGOLIN {
 
     input:
     path gff from ch_gff
-    path scaffolds from ch_spades_pangolin.collect { it[2] }
+    tuple val(sample), val(single_end), path(scaffolds) from ch_spades_pangolin
 
     output:
-    path 'spades.pangolin_lineage_report.csv'
+    path "${sample}.spades.pangolin_lineage_report.csv"
 
     script:
     features = params.gff ? "--features $gff" : ''
     """
     pangolin \\
         $scaffolds \\
-        --outfile spades.pangolin_lineage_report.csv \\
+        --outfile ${sample}.spades.pangolin_lineage_report.csv \\
     """
 }
 
@@ -2737,17 +2737,17 @@ process METASPADES_PANGOLIN {
 
     input:
     path gff from ch_gff
-    path scaffolds from ch_metaspades_pangolin.collect { it[2] }
+    tuple val(sample), val(single_end), path(scaffolds) from ch_metaspades_pangolin
 
     output:
-    path 'metaspades.pangolin_lineage_report.csv'
+    path "${sample}.metaspades.pangolin_lineage_report.csv"
 
     script:
     features = params.gff ? "--features $gff" : ''
     """
     pangolin \\
         $scaffolds \\
-        --outfile metaspades.pangolin_lineage_report.csv \\
+        --outfile ${sample}.metaspades.pangolin_lineage_report.csv \\
     """
 }
 
@@ -3042,17 +3042,16 @@ process UNICYCLER_PANGOLIN {
 
     input:
     path gff from ch_gff
-    path scaffolds from ch_unicycler_pangolin.collect { it[2] }
-
+    tuple val(sample), val(single_end), path(scaffolds) from ch_unicycler_pangolin
     output:
-    path 'unicycler.pangolin_lineage_report.csv'
+    path "${sample}.unicycler.pangolin_lineage_report.csv"
 
     script:
     features = params.gff ? "--features $gff" : ''
     """
     pangolin \\
         $scaffolds \\
-        --outfile unicycler.pangolin_lineage_report.csv \\
+        --outfile ${sample}.unicycler.pangolin_lineage_report.csv \\
     """
 }
 
@@ -3337,17 +3336,17 @@ process MINIA_PANGOLIN {
 
     input:
     path gff from ch_gff
-    path scaffolds from ch_minia_pangolin.collect { it[2] }
+    tuple val(sample), val(single_end), path(scaffolds) from ch_minia_pangolin
 
     output:
-    path 'minia.pangolin_lineage_report.csv'
+    path "${sample}.minia.pangolin_lineage_report.csv"
 
     script:
     features = params.gff ? "--features $gff" : ''
     """
     pangolin \\
         $scaffolds \\
-        --outfile minia.pangolin_lineage_report.csv \\
+        --outfile ${sample}.minia.pangolin_lineage_report.csv \\
     """
 }
 
