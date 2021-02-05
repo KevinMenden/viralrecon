@@ -1796,7 +1796,7 @@ process BCFTOOLS_CONSENSUS {
     path fasta from ch_fasta
 
     output:
-    tuple val(sample), val(single_end), path("*consensus.masked.fa") into ch_bcftools_consensus_masked
+    tuple val(sample), val(single_end), path("*consensus.masked.fa") into ch_bcftools_consensus_masked, ch_bcftools_consensus_masked_pangolin
     path "*.{consensus.fa,tsv,pdf}"
 
     script:
@@ -1897,6 +1897,33 @@ process BCFTOOLS_QUAST {
         --threads $task.cpus \\
         ${consensus.join(' ')}
     ln -s quast/report.tsv
+    """
+}
+
+/*
+ * STEP 5.7.3.4: Run Pangolin on BCFTools consensus sequence
+ */
+process BCFTOOLS_PANGOLIN {
+    label 'process_medium'
+    label 'error_ignore'
+    publishDir "${params.outdir}/variants/bcftools/pangolin", mode: params.publish_dir_mode,
+
+    when:
+    !params.skip_variants && 'bcftools' in callers
+
+    input:
+    path gff from ch_gff
+    path consensus from ch_bcftools_consensus_masked_pangolin.collect{ it[2] }
+
+    output:
+    path 'bcftools.pangolin_lineage_report.csv'
+
+    script:
+    features = params.gff ? "--features $gff" : ''
+    """
+    pangolin \\
+        $consensus \\
+        --outfile bcftools.pangolin_lineage_report.csv \\
     """
 }
 
