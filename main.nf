@@ -1353,7 +1353,7 @@ process VARSCAN2_CONSENSUS {
     path fasta from ch_fasta
 
     output:
-    tuple val(sample), val(single_end), path("*consensus.masked.fa") into ch_varscan2_consensus
+    tuple val(sample), val(single_end), path("*consensus.masked.fa") into ch_varscan2_consensus, ch_varscan2_consensus_pangolin
     path "*.{consensus.fa,tsv,pdf}"
 
     script:
@@ -1480,6 +1480,33 @@ process VARSCAN2_QUAST {
     """
 }
 
+/*
+ * STEP 5.7.1.4: Run Pangolin on VarScan2 consensus sequence
+ */
+process VARSCAN2_PANGOLIN {
+    label 'process_medium'
+    label 'error_ignore'
+    publishDir "${params.outdir}/variants/varscan2/pangolin", mode: params.publish_dir_mode,
+
+    when:
+    !params.skip_variants && 'varscan2' in callers
+
+    input:
+    path gff from ch_gff
+    path consensus from ch_varscan2_consensus_pangolin.collect{ it[2] }
+
+    output:
+    path 'varscan2.pangolin_lineage_report.csv'
+
+    script:
+    features = params.gff ? "--features $gff" : ''
+    """
+    pangolin \\
+        $consensus \\
+        --outfile varscan2.pangolin_lineage_report.csv \\
+    """
+}
+
 ////////////////////////////////////////////////////
 /* --                IVAR                      -- */
 ////////////////////////////////////////////////////
@@ -1555,7 +1582,7 @@ process IVAR_CONSENSUS {
     path fasta from ch_fasta
 
     output:
-    tuple val(sample), val(single_end), path("*.fa") into ch_ivar_consensus
+    tuple val(sample), val(single_end), path("*.fa") into ch_ivar_consensus, ch_ivar_consensus_pangolin
     path "*.{txt,tsv,pdf}"
 
     script:
@@ -1671,6 +1698,34 @@ process IVAR_QUAST {
     ln -s AF${params.max_allele_freq}/report.tsv
     """
 }
+
+/*
+ * STEP 5.7.2.4: Run Pangolin on iVar consensus sequence
+ */
+process IVAR_PANGOLIN {
+    label 'process_medium'
+    label 'error_ignore'
+    publishDir "${params.outdir}/variants/ivar/pangolin", mode: params.publish_dir_mode,
+
+    when:
+    !params.skip_variants && 'ivar' in callers
+
+    input:
+    path gff from ch_gff
+    path consensus from ch_ivar_consensus_pangolin.collect{ it[2] }
+
+    output:
+    path 'ivar.pangolin_lineage_report.csv'
+
+    script:
+    features = params.gff ? "--features $gff" : ''
+    """
+    pangolin \\
+        $consensus \\
+        --outfile ivar.pangolin_lineage_report.csv \\
+    """
+}
+
 
 ////////////////////////////////////////////////////
 /* --              BCFTOOLS                    -- */
@@ -2997,7 +3052,8 @@ process MINIA {
                                                                    ch_minia_blast,
                                                                    ch_minia_abacas,
                                                                    ch_minia_plasmidid,
-                                                                   ch_minia_quast
+                                                                   ch_minia_quast,
+                                                                   ch_minia_pangolin
 
     script:
     """
@@ -3238,6 +3294,33 @@ process MINIA_SNPEFF {
         "EFF[*].FUNCLASS" "EFF[*].CODON" "EFF[*].AA" "EFF[*].AA_LEN" \\
         > ${sample}.snpSift.table.txt
     	"""
+}
+
+/*
+ * STEP 6.3.7: Run Pangolin on Minia de novo assembly
+ */
+process MINIA_PANGOLIN {
+    label 'process_medium'
+    label 'error_ignore'
+    publishDir "${params.outdir}/assembly/minia/pangolin", mode: params.publish_dir_mode,
+
+    when:
+    !params.skip_assembly && 'minia' in assemblers && !params.skip_assembly_quast
+
+    input:
+    path gff from ch_gff
+    path scaffolds from ch_minia_pangolin.collect { it[2] }
+
+    output:
+    path 'minia.pangolin_lineage_report.csv'
+
+    script:
+    features = params.gff ? "--features $gff" : ''
+    """
+    pangolin \\
+        $scaffolds \\
+        --outfile minia.pangolin_lineage_report.csv \\
+    """
 }
 
 ///////////////////////////////////////////////////////////////////////////////
